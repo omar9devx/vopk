@@ -37,5 +37,5 @@ If a supported package manager is present in the system, APKG will detect and us
 
 ## 🚀 Installation
 ```bash
-sudo bash <(curl -fsSL https://raw.githubusercontent.com/gpteamofficial/apkg/main/installscript.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/gpteamofficial/apkg/main/installscript.sh)
 ```
