@@ -842,7 +842,7 @@ cmd_install_dev_kit() {
       ${SUDO} ${PKG_MGR} install -y build-essential git curl wget pkg-config
       ;;
     arch)
-      arch_install_with_yay base-devel git curl wget pkgconf
+      arch_install_with_yay base-devel git curl wget pkgconf -noconfirm
       ;;
     redhat)
       ${SUDO} ${PKG_MGR} groupinstall -y "Development Tools" || true
@@ -853,7 +853,7 @@ cmd_install_dev_kit() {
       ${SUDO} zypper install -y git curl wget pkg-config
       ;;
     alpine)
-      ${SUDO} apk add build-base git curl wget pkgconf
+      ${SUDO} apk add --no-interactive build-base git curl wget pkgconf
       ;;
     void)
       ${SUDO} xbps-install -y base-devel git curl wget pkg-config || true
