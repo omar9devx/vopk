@@ -39,3 +39,7 @@ If a supported package manager is present in the system, APKG will detect and us
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/gpteamofficial/apkg/main/installscript.sh)
 ```
+## ⚙ To update/repair/reinstall/delete
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/gpteamofficial/apkg/main/updatescript.sh)
+```
