@@ -323,7 +323,17 @@ main() {
 
   # interactive menu (default behavior)
   show_menu
-  read -r choice
+
+  if [ -t 0 ]; then
+    # stdin is a TTY (مثلاً لو مشغل السكربت كملف عادي)
+    read -r choice
+  elif [ -r /dev/tty ]; then
+    # السكربت شغّال من pipe (curl | bash) → نقرأ من التيرمينال نفسه
+    read -r choice </dev/tty
+  else
+    fail "No interactive terminal available to read input."
+  fi
+
 
   case "${choice}" in
     1)
