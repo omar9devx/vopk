@@ -5,13 +5,33 @@
 
 set -euo pipefail
 
-APKG_VERSION="0.3.3"
+APKG_VERSION="0.4.0"
 
 # ------------- logging helpers -------------
 
-log()  { printf '[apkg] %s\n' "$*" >&2; }
-warn() { printf '[apkg][WARN] %s\n' "$*" >&2; }
-die()  { printf '[apkg][ERROR] %s\n' "$*" >&2; exit 1; }
+log()  { printf '[APKG] %s\n' "$*" >&2; }
+warn() { printf '[APKG][WARN] %s\n' "$*" >&2; }
+die()  { printf '[APKG][ERROR] %s\n' "$*" >&2; exit 1; }
+
+# ------------- global flags -------------
+
+# 0 = normal, 1 = assume yes for all confirmations
+APKG_ASSUME_YES=0
+
+# remove -y/--yes from args and set APKG_ASSUME_YES=1
+parse_global_flags() {
+  APKG_ARGS=()
+  for arg in "$@"; do
+    case "$arg" in
+      -y|--yes)
+        APKG_ASSUME_YES=1
+        ;;
+      *)
+        APKG_ARGS+=("$arg")
+        ;;
+    esac
+  done
+}
 
 # ------------- sudo handling -------------
 
@@ -105,7 +125,11 @@ usage() {
   cat <<EOF
 apkg - unified package manager frontend
 
-Usage: apkg <command> [arguments...]
+Usage: apkg [global options] <command> [arguments...]
+
+Global options:
+  -y, --yes              Assume 'yes' for all confirmations
+  (or set APKG_ASSUME_YES=1 in the environment)
 
 Core commands (mapped per distro):
 
@@ -153,6 +177,7 @@ Environment:
 
   APKG_SUDO=""            Disable sudo/doas inside apkg (run as root)
   APKG_SUDO="doas"        Use doas instead of sudo, etc.
+  APKG_ASSUME_YES=1       Assume yes for all confirmations (same as -y)
 
 EOF
 }
@@ -168,6 +193,12 @@ print_pkg_not_found_msgs() {
 # تأكيد عام لكل العمليات الخطيرة
 apkg_confirm() {
   local msg="$1"
+
+  if [[ "${APKG_ASSUME_YES}" -eq 1 ]]; then
+    echo "apkg: ${msg} [y/N]: y (auto)"
+    return 0
+  fi
+
   local ans
   read -r -p "apkg: ${msg} [y/N]: " ans
   case "$ans" in
@@ -202,6 +233,107 @@ run_and_capture() {
 
   printf -v "$__var" '%s' "$__data"
   return "$__status"
+}
+
+# ------------- Debian-specific helpers -------------
+
+# تصحيح بعض أسماء البكجات المشهورة على Debian/Ubuntu
+debian_fix_pkg_name() {
+  local name="$1"
+  case "$name" in
+    docker)
+      # حالتك بالذات: docker -> docker.io
+      warn "On Debian/Ubuntu, 'docker' package is usually named 'docker.io'. Using 'docker.io'."
+      echo "docker.io"
+      ;;
+    node)
+      warn "On Debian/Ubuntu, 'node' is usually 'nodejs'. Using 'nodejs'."
+      echo "nodejs"
+      ;;
+    pip)
+      warn "On Debian/Ubuntu, 'pip' is usually 'python3-pip'. Using 'python3-pip'."
+      echo "python3-pip"
+      ;;
+    python-pip)
+      warn "On Debian/Ubuntu, 'python-pip' is deprecated. Using 'python3-pip'."
+      echo "python3-pip"
+      ;;
+    *)
+      echo "$name"
+      ;;
+  esac
+}
+
+debian_pkg_exists() {
+  local pkg="$1"
+  local out=""
+  if ! out="$(apt-cache policy "$pkg" 2>/dev/null)"; then
+    return 1
+  fi
+  if grep -q "Candidate: (none)" <<<"$out"; then
+    return 0 && false || return 1
+  fi
+  return 0
+}
+
+debian_install_pkgs() {
+  local original_pkgs=("$@")
+  local fixed_pkgs=()
+  local present=()
+  local missing=()
+
+  # تصحيح الأسماء أولاً
+  local p fixed
+  for p in "${original_pkgs[@]}"; do
+    fixed="$(debian_fix_pkg_name "$p")"
+    if [[ "$fixed" != "$p" ]]; then
+      log "Mapped package '$p' -> '$fixed' for Debian/Ubuntu."
+    fi
+    fixed_pkgs+=("$fixed")
+  done
+
+  # تأكد إن البكج موجودة قبل ما تسأل Y/N
+  for p in "${fixed_pkgs[@]}"; do
+    if debian_pkg_exists "$p"; then
+      present+=("$p")
+    else
+      missing+=("$p")
+    fi
+  done
+
+  if ((${#missing[@]} > 0)); then
+    print_pkg_not_found_msgs "${missing[@]}"
+  fi
+
+  if ((${#present[@]} == 0)); then
+    warn "No valid packages to install."
+    return 1
+  fi
+
+  # تأكيد
+  if ! apkg_confirm "Install packages: ${present[*]} ?"; then
+    return 1
+  fi
+
+  local out=""
+  if run_and_capture out ${SUDO} ${PKG_MGR} install -y "${present[@]}"; then
+    return 0
+  else
+    if grep -qi 'Could not get lock /var/lib/dpkg/lock-frontend' <<<"$out"; then
+      warn "apt/dpkg is currently locked by another process."
+      warn "Another apt/apt-get or software updater is running."
+      warn "Wait for it to finish or close it, then retry 'apkg install'."
+      return 1
+    fi
+
+    if grep -qi 'Unable to locate package' <<<"$out"; then
+      # احتياط لو حاجة اتغيرت بعد check
+      print_pkg_not_found_msgs "${present[@]}"
+    else
+      warn "Install failed."
+    fi
+    return 1
+  fi
 }
 
 # ------------- Arch: pacman + yay (مع AUR) -------------
@@ -250,6 +382,11 @@ install_yay_if_needed() {
 arch_install_with_yay() {
   local pkgs=("$@")
   local out
+
+  # تأكيد قبل ما نبدأ
+  if ! apkg_confirm "Install packages: ${pkgs[*]} ?"; then
+    return 1
+  fi
 
   # جرّب pacman أولاً
   if run_and_capture out ${SUDO} pacman -S --needed --noconfirm "${pkgs[@]}"; then
@@ -386,30 +523,19 @@ cmd_install() {
     die "You must specify at least one package to install."
   fi
 
-  if ! apkg_confirm "Install packages: $* ?"; then
-    return 1
-  fi
-
   case "${PKG_MGR_FAMILY}" in
+    debian)
+      debian_install_pkgs "$@"
+      ;;
+
     arch)
       arch_install_with_yay "$@"
       ;;
 
-    debian)
-      local out=""
-      if run_and_capture out ${SUDO} ${PKG_MGR} install -y "$@"; then
-        return 0
-      else
-        if grep -qi 'Unable to locate package' <<< "$out"; then
-          print_pkg_not_found_msgs "$@"
-        else
-          warn "Install failed."
-        fi
+    redhat)
+      if ! apkg_confirm "Install packages: $* ?"; then
         return 1
       fi
-      ;;
-
-    redhat)
       local out=""
       if run_and_capture out ${SUDO} ${PKG_MGR} install -y "$@"; then
         return 0
@@ -424,6 +550,9 @@ cmd_install() {
       ;;
 
     suse)
+      if ! apkg_confirm "Install packages: $* ?"; then
+        return 1
+      fi
       local out=""
       if run_and_capture out ${SUDO} zypper install -y "$@"; then
         return 0
@@ -438,6 +567,9 @@ cmd_install() {
       ;;
 
     alpine)
+      if ! apkg_confirm "Install packages: $* ?"; then
+        return 1
+      fi
       local out=""
       if run_and_capture out ${SUDO} apk add --no-interactive "$@"; then
         return 0
@@ -452,6 +584,9 @@ cmd_install() {
       ;;
 
     void)
+      if ! apkg_confirm "Install packages: $* ?"; then
+        return 1
+      fi
       local out=""
       if run_and_capture out ${SUDO} xbps-install -y "$@"; then
         return 0
@@ -466,6 +601,9 @@ cmd_install() {
       ;;
 
     gentoo)
+      if ! apkg_confirm "Install packages: $* ?"; then
+        return 1
+      fi
       local out=""
       if run_and_capture out ${SUDO} emerge "$@"; then
         return 0
@@ -1051,6 +1189,10 @@ main() {
 
   local cmd="${1:-}"
   shift || true
+
+  # parse global flags (-y/--yes) for all commands
+  parse_global_flags "$@"
+  set -- "${APKG_ARGS[@]}"
 
   case "${cmd}" in
     update)         cmd_update "$@" ;;
