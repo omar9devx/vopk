@@ -19,11 +19,11 @@ AUTO_YES=0
 # --------------- colors (TTY-safe) ---------------
 
 if [ -t 2 ] && [ "${NO_COLOR:-0}" = "0" ]; then
-  C_RESET='\033[0m'
-  C_INFO='\033[1;34m'
-  C_WARN='\033[1;33m'
-  C_ERR='\033[1;31m'
-  C_OK='\033[1;32m'
+  C_RESET="$(printf '\033[0m')"
+  C_INFO="$(printf '\033[1;34m')"  # blue
+  C_WARN="$(printf '\033[1;33m')"  # yellow
+  C_ERR="$(printf '\033[1;31m')"   # red
+  C_OK="$(printf '\033[1;32m')"    # green
 else
   C_RESET=''
   C_INFO=''
@@ -244,14 +244,15 @@ install_yay_arch() {
   pacman -Sy --needed --noconfirm base-devel git
 
   log "Switching to 'aurbuild' to build and install yay from AUR..."
-  su - aurbuild -c '
-    set -eu
-    workdir=$(mktemp -d /tmp/yay.XXXXXX)
-    cd "$workdir"
-    git clone --depth=1 https://aur.archlinux.org/yay-bin.git
-    cd yay-bin
-    makepkg -si --noconfirm
-  '
+  # نستخدم here-doc عشان نخلي الأوامر تشتغل جوّا شيل اليوزر الجديد
+  su - aurbuild <<'EOF'
+set -eu
+workdir="$(mktemp -d /tmp/yay.XXXXXX)"
+cd "$workdir"
+git clone --depth=1 https://aur.archlinux.org/yay-bin.git
+cd yay-bin
+makepkg -si --noconfirm
+EOF
 
   ok "yay has been installed."
 
