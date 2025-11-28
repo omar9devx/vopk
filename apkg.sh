@@ -7,35 +7,69 @@
 # LICENSE: MIT
 set -euo pipefail
 
-APKG_VERSION="0.6.0"
+APKG_VERSION="0.7.0"
 
 # ------------- logging helpers -------------
 
-# Colors
+# Colors (can be disabled with --no-color or APKG_NO_COLOR/NO_COLOR)
 BOLD='\033[1m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 RED='\033[0;31m'
 RESET='\033[0m'
 
-log()  { printf "${BOLD}[APKG]${RESET} ${GREEN}[INF]${RESET} %s\n" "$*" >&2; }
+log()  { 
+  if [[ "${APKG_QUIET:-0}" -eq 1 ]]; then return; fi
+  printf "${BOLD}[APKG]${RESET} ${GREEN}[INF]${RESET} %s\n" "$*" >&2
+}
 warn() { printf "${BOLD}[APKG]${RESET} ${YELLOW}[WARN]${RESET} %s\n" "$*" >&2; }
 die()  { printf "${BOLD}[APKG]${RESET} ${RED}[ERROR]${RESET} %s\n" "$*" >&2; exit 1; }
+debug() {
+  if [[ "${APKG_DEBUG:-0}" -eq 1 ]]; then
+    printf "${BOLD}[APKG]${RESET} ${YELLOW}[DBG]${RESET} %s\n" "$*" >&2
+  fi
+}
 
 # لطيف مع Ctrl+C / kill
 trap 'echo; die "Operation interrupted by user."' INT TERM
 
 # ------------- global flags -------------
 
-APKG_ASSUME_YES=0
+APKG_ASSUME_YES="${APKG_ASSUME_YES:-0}"
+APKG_DRY_RUN="${APKG_DRY_RUN:-0}"
+APKG_NO_COLOR="${APKG_NO_COLOR:-0}"
+APKG_DEBUG="${APKG_DEBUG:-0}"
+APKG_QUIET="${APKG_QUIET:-0}"
 APKG_ARGS=()
+
+apply_color_mode() {
+  if [[ "${APKG_NO_COLOR}" -eq 1 || -n "${NO_COLOR-}" ]]; then
+    BOLD=''
+    GREEN=''
+    YELLOW=''
+    RED=''
+    RESET=''
+  fi
+}
 
 parse_global_flags() {
   APKG_ARGS=()
   for arg in "$@"; do
     case "$arg" in
-      -y|--yes)
+      -y|--yes|--assume-yes)
         APKG_ASSUME_YES=1
+        ;;
+      -n|--dry-run)
+        APKG_DRY_RUN=1
+        ;;
+      --no-color)
+        APKG_NO_COLOR=1
+        ;;
+      --debug)
+        APKG_DEBUG=1
+        ;;
+      -q|--quiet)
+        APKG_QUIET=1
         ;;
       *)
         APKG_ARGS+=("$arg")
@@ -157,58 +191,78 @@ ensure_pkg_mgr() {
 }
 
 usage() {
-  BOLD='\033[1m'
-  GREEN='\033[0;32m'
-  YELLOW='\033[0;33m'
-  BLUE='\033[0;34m'
-  RESET='\033[0m'
+  local BOLD_LOCAL GREEN_LOCAL YELLOW_LOCAL BLUE_LOCAL RESET_LOCAL
+  if [[ "${APKG_NO_COLOR}" -eq 1 || -n "${NO_COLOR-}" ]]; then
+    BOLD_LOCAL=''
+    GREEN_LOCAL=''
+    YELLOW_LOCAL=''
+    BLUE_LOCAL=''
+    RESET_LOCAL=''
+  else
+    BOLD_LOCAL='\033[1m'
+    GREEN_LOCAL='\033[0;32m'
+    YELLOW_LOCAL='\033[0;33m'
+    BLUE_LOCAL='\033[0;34m'
+    RESET_LOCAL='\033[0m'
+  fi
 
-  printf "${BOLD}${BLUE}[APKG]${RESET} Unified Package Manager Frontend\n\n"
+  printf "${BOLD_LOCAL}${BLUE_LOCAL}[APKG]${RESET_LOCAL} Unified Package Manager Frontend\n\n"
 
-  printf "${BOLD}Usage:${RESET} ${GREEN}apkg [options] <command> [args]${RESET}\n\n"
+  printf "${BOLD_LOCAL}Usage:${RESET_LOCAL} ${GREEN_LOCAL}apkg [options] <command> [args]${RESET_LOCAL}\n\n"
 
-  printf "${BOLD}Global options:${RESET}\n"
-  printf "  ${YELLOW}-y, --yes${RESET}       Assume yes (or set ${YELLOW}APKG_ASSUME_YES=1${RESET})\n\n"
+  printf "${BOLD_LOCAL}Global options:${RESET_LOCAL}\n"
+  printf "  ${YELLOW_LOCAL}-y, --yes, --assume-yes${RESET_LOCAL}  Assume yes\n"
+  printf "  ${YELLOW_LOCAL}-n, --dry-run${RESET_LOCAL}           Preview only, no changes\n"
+  printf "  ${YELLOW_LOCAL}--no-color${RESET_LOCAL}              Disable colored output\n"
+  printf "  ${YELLOW_LOCAL}--debug${RESET_LOCAL}                 Verbose debug logging\n"
+  printf "  ${YELLOW_LOCAL}-q, --quiet${RESET_LOCAL}             Hide info logs\n\n"
 
-  printf "${BOLD}Core commands:${RESET}\n"
-  printf "  ${GREEN}update${RESET}            Update package database\n"
-  printf "  ${GREEN}upgrade${RESET}           Upgrade packages\n"
-  printf "  ${GREEN}full-upgrade${RESET}      Full system upgrade\n"
-  printf "  ${GREEN}install PKG...${RESET}    Install package(s)\n"
-  printf "  ${GREEN}remove PKG...${RESET}     Remove package(s)\n"
-  printf "  ${GREEN}purge PKG...${RESET}      Remove packages + configs\n"
-  printf "  ${GREEN}autoremove${RESET}        Remove orphan dependencies\n"
-  printf "  ${GREEN}search PATTERN${RESET}    Search packages\n"
-  printf "  ${GREEN}list${RESET}              List installed packages\n"
-  printf "  ${GREEN}show PKG${RESET}          Show package info\n"
-  printf "  ${GREEN}clean${RESET}             Clean cache\n\n"
+  printf "${BOLD_LOCAL}Core commands:${RESET_LOCAL}\n"
+  printf "  ${GREEN_LOCAL}update${RESET_LOCAL}            Update package database\n"
+  printf "  ${GREEN_LOCAL}upgrade${RESET_LOCAL}           Upgrade packages\n"
+  printf "  ${GREEN_LOCAL}full-upgrade${RESET_LOCAL}      Full system upgrade\n"
+  printf "  ${GREEN_LOCAL}install PKG...${RESET_LOCAL}    Install package(s)\n"
+  printf "  ${GREEN_LOCAL}remove PKG...${RESET_LOCAL}     Remove package(s)\n"
+  printf "  ${GREEN_LOCAL}purge PKG...${RESET_LOCAL}      Remove packages + configs\n"
+  printf "  ${GREEN_LOCAL}autoremove${RESET_LOCAL}        Remove orphan dependencies\n"
+  printf "  ${GREEN_LOCAL}search PATTERN${RESET_LOCAL}    Search packages\n"
+  printf "  ${GREEN_LOCAL}list${RESET_LOCAL}              List installed packages\n"
+  printf "  ${GREEN_LOCAL}show PKG${RESET_LOCAL}          Show package info\n"
+  printf "  ${GREEN_LOCAL}clean${RESET_LOCAL}             Clean cache\n\n"
 
-  printf "${BOLD}Repos:${RESET}\n"
-  printf "  ${GREEN}repos-list${RESET}        List repos\n"
-  printf "  ${GREEN}add-repo ARGS...${RESET}  Add repo\n"
-  printf "  ${GREEN}remove-repo PAT${RESET}   Remove/disable repo\n\n"
+  printf "${BOLD_LOCAL}Repos:${RESET_LOCAL}\n"
+  printf "  ${GREEN_LOCAL}repos-list${RESET_LOCAL}        List repos\n"
+  printf "  ${GREEN_LOCAL}add-repo ARGS...${RESET_LOCAL}  Add repo\n"
+  printf "  ${GREEN_LOCAL}remove-repo PAT${RESET_LOCAL}   Remove/disable repo\n\n"
 
-  printf "${BOLD}System & Dev:${RESET}\n"
-  printf "  ${GREEN}install-dev-kit${RESET}   Install dev tools\n"
-  printf "  ${GREEN}fix-dns${RESET}           Fix DNS issues\n"
-  printf "  ${GREEN}sys-info${RESET}          System info\n"
-  printf "  ${GREEN}kernel${RESET}            Kernel version\n"
-  printf "  ${GREEN}disk${RESET}              Disk usage\n"
-  printf "  ${GREEN}mem${RESET}               Memory usage\n"
-  printf "  ${GREEN}top${RESET}               htop/top\n"
-  printf "  ${GREEN}ps${RESET}                Top processes\n"
-  printf "  ${GREEN}ip${RESET}                Network info\n\n"
+  printf "${BOLD_LOCAL}System & Dev:${RESET_LOCAL}\n"
+  printf "  ${GREEN_LOCAL}install-dev-kit${RESET_LOCAL}   Install dev tools\n"
+  printf "  ${GREEN_LOCAL}fix-dns${RESET_LOCAL}           Fix DNS issues\n"
+  printf "  ${GREEN_LOCAL}sys-info${RESET_LOCAL}          System info\n"
+  printf "  ${GREEN_LOCAL}kernel${RESET_LOCAL}            Kernel version\n"
+  printf "  ${GREEN_LOCAL}disk${RESET_LOCAL}              Disk usage\n"
+  printf "  ${GREEN_LOCAL}mem${RESET_LOCAL}               Memory usage\n"
+  printf "  ${GREEN_LOCAL}top${RESET_LOCAL}               htop/top\n"
+  printf "  ${GREEN_LOCAL}ps${RESET_LOCAL}                Top processes\n"
+  printf "  ${GREEN_LOCAL}ip${RESET_LOCAL}                Network info\n\n"
 
-  printf "${BOLD}General:${RESET}\n"
-  printf "  ${GREEN}-v | --version${RESET}    Show version\n"
-  printf "  ${GREEN}help${RESET}              Show this help\n\n"
+  printf "${BOLD_LOCAL}Script mode:${RESET_LOCAL}\n"
+  printf "  ${GREEN_LOCAL}script-v ...${RESET_LOCAL}      Raw backend (apt-get/pacman/...) for scripts\n"
+  printf "                         Behaves like calling the real manager directly.\n\n"
 
-  printf "${BOLD}Env:${RESET}\n"
-  printf "  ${YELLOW}APKG_SUDO=\"\"${RESET}        Disable sudo/doas\n"
-  printf "  ${YELLOW}APKG_SUDO=\"doas\"${RESET}    Use doas\n"
-  printf "  ${YELLOW}APKG_ASSUME_YES=1${RESET}   Assume yes\n"
+  printf "${BOLD_LOCAL}General:${RESET_LOCAL}\n"
+  printf "  ${GREEN_LOCAL}-v | --version${RESET_LOCAL}    Show version\n"
+  printf "  ${GREEN_LOCAL}help${RESET_LOCAL}              Show this help\n\n"
+
+  printf "${BOLD_LOCAL}Env:${RESET_LOCAL}\n"
+  printf "  ${YELLOW_LOCAL}APKG_SUDO=\"\"${RESET_LOCAL}          Disable sudo/doas\n"
+  printf "  ${YELLOW_LOCAL}APKG_SUDO=\"doas\"${RESET_LOCAL}      Use doas\n"
+  printf "  ${YELLOW_LOCAL}APKG_ASSUME_YES=1${RESET_LOCAL}     Assume yes\n"
+  printf "  ${YELLOW_LOCAL}APKG_DRY_RUN=1${RESET_LOCAL}        Global dry-run\n"
+  printf "  ${YELLOW_LOCAL}APKG_NO_COLOR=1${RESET_LOCAL}      Disable colors\n"
+  printf "  ${YELLOW_LOCAL}APKG_DEBUG=1${RESET_LOCAL}         Enable debug logs\n"
+  printf "  ${YELLOW_LOCAL}APKG_QUIET=1${RESET_LOCAL}         Hide info logs\n"
 }
-
 
 # ------------- helpers -------------
 
@@ -226,9 +280,12 @@ apkg_confirm() {
     return 0
   fi
 
-  local ans
-  read -r -p "apkg: ${msg} [y/N]: " ans
-  case "$ans" in
+  local ans trimmed
+  read -r -p "apkg: ${msg} [y/N]: " ans || true
+  # اشيل المسافات والتابات الخ...
+  trimmed="${ans//[[:space:]]/}"
+
+  case "$trimmed" in
     y|Y|yes|YES)
       return 0
       ;;
@@ -269,6 +326,7 @@ apkg_preview() {
   "$@"
   local _st=$?
   set -e
+  debug "preview exit status: ${_st}"
   return 0
 }
 
@@ -378,16 +436,14 @@ debian_fix_pkg_name() {
   esac
 }
 
+# locale-safe: نعتمد فقط على exit code من apt-cache show
 debian_pkg_exists() {
   local pkg="$1"
-  local out=""
-  if ! out="$(apt-cache policy "$pkg" 2>/dev/null)"; then
-    return 1
+  debug "Checking Debian package existence via apt-cache show: ${pkg}"
+  if apt-cache show "$pkg" >/dev/null 2>&1; then
+    return 0
   fi
-  if grep -q "Candidate: (none)" <<<"$out"; then
-    return 1
-  fi
-  return 0
+  return 1
 }
 
 debian_install_pkgs() {
@@ -438,6 +494,11 @@ debian_install_pkgs() {
       return 1
     fi
 
+    if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+      log "[DRY-RUN] Skipping actual dpkg -i install."
+      return 0
+    fi
+
     ${SUDO} dpkg -i "${debs[@]}"
     return 0
   fi
@@ -472,22 +533,16 @@ debian_install_pkgs() {
     return 1
   fi
 
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Global dry-run active, skipping actual APT install."
+    return 0
+  fi
+
   local out=""
   if run_and_capture out ${SUDO} ${PKG_MGR} install -y "${present[@]}"; then
     return 0
   else
-    if grep -qi 'Could not get lock /var/lib/dpkg/lock-frontend' <<<"$out"; then
-      warn "apt/dpkg is currently locked by another process."
-      warn "Another apt/apt-get or software updater is running."
-      warn "Wait for it to finish or close it, then retry 'apkg install'."
-      return 1
-    fi
-
-    if grep -qi 'Unable to locate package' <<<"$out"; then
-      print_pkg_not_found_msgs "${present[@]}"
-    else
-      warn "Install failed."
-    fi
+    warn "Install failed. Check log above for details."
     return 1
   fi
 }
@@ -595,6 +650,11 @@ arch_install_with_yay() {
     return 1
   fi
 
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Global dry-run active, skipping pacman/yay real install."
+    return 0
+  fi
+
   # أولاً: pacman للأوفشال
   if ((${#official_pkgs[@]} > 0)); then
     local out_pac=""
@@ -633,6 +693,11 @@ cmd_update() {
     return 1
   fi
 
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would update package database for ${PKG_MGR_FAMILY}."
+    return 0
+  fi
+
   case "${PKG_MGR_FAMILY}" in
     debian)
       ${SUDO} ${PKG_MGR} update
@@ -667,6 +732,11 @@ cmd_upgrade() {
     return 1
   fi
 
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would upgrade installed packages."
+    return 0
+  fi
+
   case "${PKG_MGR_FAMILY}" in
     debian)
       ${SUDO} ${PKG_MGR} upgrade -y
@@ -699,6 +769,11 @@ cmd_full_upgrade() {
   ensure_pkg_mgr
   if ! apkg_confirm "Perform a full system upgrade?"; then
     return 1
+  fi
+
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would perform a full system upgrade."
+    return 0
   fi
 
   case "${PKG_MGR_FAMILY}" in
@@ -766,15 +841,17 @@ cmd_install() {
       if ! apkg_confirm "Install packages: ${APKG_PRESENT_PKGS[*]} ?"; then
         return 1
       fi
+
+      if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+        log "[DRY-RUN] Skipping actual ${PKG_MGR} install."
+        return 0
+      fi
+
       local out=""
       if run_and_capture out ${SUDO} ${PKG_MGR} install -y "${APKG_PRESENT_PKGS[@]}"; then
         return 0
       else
-        if grep -qiE 'No match for argument|Unable to find a match' <<< "$out"; then
-          print_pkg_not_found_msgs "${APKG_PRESENT_PKGS[@]}"
-        else
-          warn "Install failed."
-        fi
+        warn "Install failed."
         return 1
       fi
       ;;
@@ -796,15 +873,17 @@ cmd_install() {
       if ! apkg_confirm "Install packages: ${APKG_PRESENT_PKGS[*]} ?"; then
         return 1
       fi
+
+      if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+        log "[DRY-RUN] Skipping actual zypper install."
+        return 0
+      fi
+
       local out_s=""
       if run_and_capture out_s ${SUDO} zypper install -y "${APKG_PRESENT_PKGS[@]}"; then
         return 0
       else
-        if grep -qi 'not found in package names' <<< "$out_s"; then
-          print_pkg_not_found_msgs "${APKG_PRESENT_PKGS[@]}"
-        else
-          warn "Install failed."
-        fi
+        warn "Install failed."
         return 1
       fi
       ;;
@@ -826,15 +905,17 @@ cmd_install() {
       if ! apkg_confirm "Install packages: ${APKG_PRESENT_PKGS[*]} ?"; then
         return 1
       fi
+
+      if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+        log "[DRY-RUN] Skipping actual apk add."
+        return 0
+      fi
+
       local out_a=""
       if run_and_capture out_a ${SUDO} apk add --no-interactive "${APKG_PRESENT_PKGS[@]}"; then
         return 0
       else
-        if grep -qi 'not found' <<< "$out_a"; then
-          print_pkg_not_found_msgs "${APKG_PRESENT_PKGS[@]}"
-        else
-          warn "Install failed."
-        fi
+        warn "Install failed."
         return 1
       fi
       ;;
@@ -858,15 +939,17 @@ cmd_install() {
       if ! apkg_confirm "Install packages: ${APKG_PRESENT_PKGS[*]} ?"; then
         return 1
       fi
+
+      if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+        log "[DRY-RUN] Skipping actual xbps-install."
+        return 0
+      fi
+
       local out_v=""
       if run_and_capture out_v ${SUDO} xbps-install -y "${APKG_PRESENT_PKGS[@]}"; then
         return 0
       else
-        if grep -qi 'not found in repository pool' <<< "$out_v"; then
-          print_pkg_not_found_msgs "${APKG_PRESENT_PKGS[@]}"
-        else
-          warn "Install failed."
-        fi
+        warn "Install failed."
         return 1
       fi
       ;;
@@ -883,15 +966,17 @@ cmd_install() {
       if ! apkg_confirm "Install packages: $* ?"; then
         return 1
       fi
+
+      if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+        log "[DRY-RUN] Skipping actual emerge."
+        return 0
+      fi
+
       local out_g=""
       if run_and_capture out_g ${SUDO} emerge "$@"; then
         return 0
       else
-        if grep -qi 'emerge: there are no ebuilds to satisfy' <<< "$out_g"; then
-          print_pkg_not_found_msgs "$@"
-        else
-          warn "Install failed."
-        fi
+        warn "Install failed."
         return 1
       fi
       ;;
@@ -907,6 +992,11 @@ cmd_remove() {
   printf '  %s\n' "$@"
   if ! apkg_confirm "Remove packages: $* ?"; then
     return 1
+  fi
+
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would remove packages: $*"
+    return 0
   fi
 
   case "${PKG_MGR_FAMILY}" in
@@ -949,6 +1039,11 @@ cmd_purge() {
     return 1
   fi
 
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would purge packages: $*"
+    return 0
+  fi
+
   case "${PKG_MGR_FAMILY}" in
     debian|debian_dpkg)
       if command -v apt-get >/dev/null 2>&1 || command -v apt >/dev/null 2>&1; then
@@ -986,6 +1081,11 @@ cmd_autoremove() {
   ensure_pkg_mgr
   if ! apkg_confirm "Autoremove unused/orphan packages?"; then
     return 1
+  fi
+
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would perform autoremove for ${PKG_MGR_FAMILY}."
+    return 0
   fi
 
   case "${PKG_MGR_FAMILY}" in
@@ -1101,11 +1201,7 @@ cmd_show() {
       if run_and_capture out apt-cache show "$@"; then
         return 0
       else
-        if grep -qi 'E: No packages found' <<< "$out"; then
-          print_pkg_not_found_msgs "$@"
-        else
-          warn "Show failed."
-        fi
+        warn "Show failed."
         return 1
       fi
       ;;
@@ -1199,6 +1295,11 @@ cmd_clean() {
     return 1
   fi
 
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would clean cache for ${PKG_MGR_FAMILY}."
+    return 0
+  fi
+
   case "${PKG_MGR_FAMILY}" in
     debian)
       ${SUDO} ${PKG_MGR} clean
@@ -1278,6 +1379,12 @@ cmd_add_repo() {
   if [[ $# -eq 0 ]]; then
     die "Usage: apkg add-repo <repo-spec-or-url>"
   fi
+
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would add repo with arguments: $*"
+    return 0
+  fi
+
   case "${PKG_MGR_FAMILY}" in
     debian|debian_dpkg)
       if command -v add-apt-repository >/dev/null 2>&1; then
@@ -1329,6 +1436,11 @@ cmd_remove_repo() {
   fi
   local pattern="$1"
 
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would remove/disable repo lines matching: ${pattern}"
+    return 0
+  fi
+
   case "${PKG_MGR_FAMILY}" in
     debian|debian_dpkg)
       warn "Will comment out lines matching '${pattern}' in /etc/apt/sources.list*."
@@ -1370,11 +1482,15 @@ cmd_install_dev_kit() {
     return 1
   fi
 
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would install basic development tools for ${PKG_MGR_FAMILY}."
+    return 0
+  fi
+
   log "Installing basic development tools (best-effort for ${PKG_MGR_FAMILY})..."
   case "${PKG_MGR_FAMILY}" in
     debian)
       ${SUDO} ${PKG_MGR} update
-      # هنا مش عامل dry-run عشان دي عملية "meta" كبيرة؛ لو حابب أقدر أضيفها برضه بنفس الأسلوب
       ${SUDO} ${PKG_MGR} install -y build-essential git curl wget pkg-config
       ;;
     debian_dpkg)
@@ -1407,6 +1523,11 @@ cmd_install_dev_kit() {
 # ------------- DNS fixer -------------
 
 cmd_fix_dns() {
+  if [[ "${APKG_DRY_RUN}" -eq 1 ]]; then
+    log "[DRY-RUN] Would adjust /etc/resolv.conf or restart DNS services."
+    return 0
+  fi
+
   log "Attempting to fix DNS issues (best-effort)."
 
   if [[ -L /etc/resolv.conf ]]; then
@@ -1487,6 +1608,35 @@ cmd_ip() {
   fi
 }
 
+# ------------- script-v (raw backend mode) -------------
+
+# script-v: نسخة خاصة للسكربتات:
+# - بدون حماية إضافية / أسئلة من apkg
+# - تمرير مباشر للمدير الحقيقي (apt-get, pacman, dnf, ...)
+# - apt-get = apkg script-v ...
+cmd_script_v() {
+  ensure_pkg_mgr
+  debug "script-v backend: ${PKG_MGR_FAMILY} / ${PKG_MGR}"
+
+  case "${PKG_MGR_FAMILY}" in
+    debian)
+      exec ${SUDO} apt-get "$@"
+      ;;
+    debian_dpkg)
+      exec ${SUDO} dpkg "$@"
+      ;;
+    arch)
+      exec ${SUDO} pacman "$@"
+      ;;
+    redhat|suse|alpine|void|gentoo)
+      exec ${SUDO} ${PKG_MGR} "$@"
+      ;;
+    *)
+      die "script-v mode is not supported for this system."
+      ;;
+  esac
+}
+
 # ------------- main dispatch -------------
 
 main() {
@@ -1500,8 +1650,17 @@ main() {
   local cmd="${1:-}"
   shift || true
 
+  # script-v: لا نعمل parse للفلاجس – تمرير خام للباك إند
+  if [[ "${cmd}" == "script-v" ]]; then
+    cmd_script_v "$@"
+    # exec في cmd_script_v، لو رجع هنا فيبقى في خطأ ما
+    exit $?
+  fi
+
   parse_global_flags "$@"
   set -- "${APKG_ARGS[@]}"
+
+  apply_color_mode
 
   case "${cmd}" in
     update)         cmd_update "$@" ;;
