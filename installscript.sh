@@ -5,6 +5,9 @@
 # - On Arch: temporary 'aurbuild' user to install yay, then cleanup
 # - Colored output via printf
 # - POSIX sh compatible
+#
+# Works correctly when piped, e.g.:
+#   curl -fsSL https://raw.githubusercontent.com/gpteamofficial/vopkg/main/installscript.sh | sudo sh -s -- -y
 
 set -eu
 
@@ -60,7 +63,7 @@ usage() {
 
 require_root() {
   if [ "$(id -u)" -ne 0 ]; then
-    fail "This installer must be run as root. Try: sudo $0"
+    fail "This installer must be run as root. Try: sudo sh $0"
   fi
 }
 
@@ -92,6 +95,18 @@ detect_pkg_mgr() {
   fi
 }
 
+# Read a line from the real TTY (works even when stdin is a pipe).
+# Returns 0 on success, 1 if no usable TTY.
+read_from_tty() {
+  varname=$1
+  if [ -r /dev/tty ]; then
+    if IFS= read -r "$varname" 2>/dev/null </dev/tty; then
+      return 0
+    fi
+  fi
+  return 1
+}
+
 ask_confirmation() {
   # $1 = message, $2 = default (Y/N, optional, default N)
   msg=$1
@@ -115,15 +130,10 @@ ask_confirmation() {
 
   printf '%s[vopk-installer][PROMPT]%s %s %s ' "$C_WARN" "$C_RESET" "$msg" "$prompt" >&2
 
-  if [ -t 0 ]; then
-    if ! read -r ans </dev/tty; then
-      return 1
-    fi
-  elif [ -r /dev/tty ]; then
-    if ! read -r ans </dev/tty; then
-      return 1
-    fi
-  else
+  ans=""
+  if ! read_from_tty ans; then
+    printf '\n' >&2
+    warn "No interactive terminal available; assuming NO."
     return 1
   fi
 
