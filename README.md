@@ -114,7 +114,7 @@ This makes VOPK a self‑reliant package interface capable of functioning even o
 
 ## 🤝 vmpkg Integration (Optional Backend)
 
-If you have **[vmpkg](https://github.com/your-org-here/vmpkg)** installed, VOPK can act as a friendly frontend for it too:
+If you have **[vmpkg](https://github.com/gpteamofficial/vmpkg)** installed, VOPK can act as a friendly frontend for it too:
 
 - If no system package manager is detected but `vmpkg` is available → VOPK uses **vmpkg** as backend
 - You can also call vmpkg explicitly:
