@@ -2,6 +2,20 @@
 
 **VOPK** is the next-generation, cross‑distribution, **unified package frontend** built and maintained by the **GP Team**.  
 It provides **one CLI** for all major Linux distributions — with identical commands, predictable behavior, and a cleaner UX.
+<p align="center">
+  <a href="https://github.com/gpteamofficial/vopk">
+    <img src="https://img.shields.io/badge/platform-Linux-333333?logo=linux&logoColor=ffffff" alt="Platform: Linux">
+  </a>
+  <a href="https://github.com/gpteamofficial/vopk">
+    <img src="https://img.shields.io/badge/shell-BASH-4EAA25?logo=gnu-bash&logoColor=ffffff" alt="Shell: Bash">
+  </a>
+  <a href="https://github.com/gpteamofficial/vopk/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-GPL3-blue.svg" alt="License: MIT">
+  </a>
+  <a href="https://github.com/gpteamofficial/vopk">
+    <img src="https://img.shields.io/badge/type-self--contained%20pkg%20manager-ff6f00" alt="Self-contained package manager">
+  </a>
+</p>
 
 > 🆕 **1.0.0 – the biggest update in APKG history**  
 > - Project renamed from **APKG → VOPK**  
