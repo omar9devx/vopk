@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 # vopk - Ultimate Package Manager (3.0.0 "Jammy")
 # The Complete Package Management Solution - Cross-platform, Universal, Intelligent
 #
@@ -25,36 +26,51 @@ VOPK_ISSUES_URL="https://github.com/vopkteam/vopk/issues"
 # ENHANCED CONFIGURATION SYSTEM WITH YAML/JSON SUPPORT
 ###############################################################################
 
-: "${VOPK_ASSUME_YES:=${VOPK_ASSUME_YES:-0}}"
-: "${VOPK_DRY_RUN:=${VOPK_DRY_RUN:-0}}"
-: "${VOPK_NO_COLOR:=${VOPK_NO_COLOR:-0}}"
-: "${VOPK_DEBUG:=${VOPK_DEBUG:-0}}"
-: "${VOPK_QUIET:=${VOPK_QUIET:-0}}"
-: "${VOPK_SUDO:=${VOPK_SUDO:-}}"
-: "${VOPK_PARALLEL:=${VOPK_PARALLEL:-1}}"
-: "${VOPK_MAX_RETRIES:=${VOPK_MAX_RETRIES:-3}}"
-: "${VOPK_CACHE_DIR:=${VOPK_CACHE_DIR:-$HOME/.cache/vopk}}"
-: "${VOPK_CONFIG_DIR:=${VOPK_CONFIG_DIR:-$HOME/.config/vopk}}"
-: "${VOPK_LOG_FILE:=${VOPK_LOG_FILE:-}}"
-: "${VOPK_BACKUP:=${VOPK_BACKUP:-1}}"
-: "${VOPK_ROLLBACK:=${VOPK_ROLLBACK:-1}}"
-: "${VOPK_AI_SUGGEST:=${VOPK_AI_SUGGEST:-0}}"
-: "${VOPK_SECURITY_SCAN:=${VOPK_SECURITY_SCAN:-1}}"
-: "${VOPK_AUTO_CLEAN:=${VOPK_AUTO_CLEAN:-7}}"
-: "${VOPK_NOTIFY:=${VOPK_NOTIFY:-1}}"
-: "${VOPK_TELEMETRY:=${VOPK_TELEMETRY:-0}}"
-: "${VOPK_UPDATE_CHECK:=${VOPK_UPDATE_CHECK:-1}}"
-: "${VOPK_PLUGINS:=${VOPK_PLUGINS:-1}}"
-: "${VOPK_THEME:=${VOPK_THEME:-default}}"
-: "${VOPK_ANIMATIONS:=${VOPK_ANIMATIONS:-1}}"
-: "${VOPK_COMPLETION:=${VOPK_COMPLETION:-1}}"
-: "${VOPK_HISTORY:=${VOPK_HISTORY:-1}}"
-: "${VOPK_AUTO_UPDATE:=${VOPK_AUTO_UPDATE:-0}}"
-: "${VOPK_PROFILE:=${VOPK_PROFILE:-default}}"
-: "${VOPK_OPTIMIZE:=${VOPK_OPTIMIZE:-1}}"
-: "${VOPK_BENCHMARK:=${VOPK_BENCHMARK:-0}}"
-: "${VOPK_VERBOSE:=${VOPK_VERBOSE:-0}}"
-: "${VOPK_SHELL_INTEGRATION:=${VOPK_SHELL_INTEGRATION:-1}}"
+# Default configuration values
+VOPK_CONFIG_DEFAULTS=(
+    ["VOPK_ASSUME_YES"]="0"
+    ["VOPK_DRY_RUN"]="0"
+    ["VOPK_NO_COLOR"]="0"
+    ["VOPK_DEBUG"]="0"
+    ["VOPK_QUIET"]="0"
+    ["VOPK_SUDO"]=""
+    ["VOPK_PARALLEL"]="1"
+    ["VOPK_MAX_RETRIES"]="3"
+    ["VOPK_CACHE_DIR"]="$HOME/.cache/vopk"
+    ["VOPK_CONFIG_DIR"]="$HOME/.config/vopk"
+    ["VOPK_LOG_FILE"]=""
+    ["VOPK_BACKUP"]="1"
+    ["VOPK_ROLLBACK"]="1"
+    ["VOPK_AI_SUGGEST"]="0"
+    ["VOPK_SECURITY_SCAN"]="1"
+    ["VOPK_AUTO_CLEAN"]="7"
+    ["VOPK_NOTIFY"]="1"
+    ["VOPK_TELEMETRY"]="0"
+    ["VOPK_UPDATE_CHECK"]="1"
+    ["VOPK_PLUGINS"]="1"
+    ["VOPK_THEME"]="default"
+    ["VOPK_ANIMATIONS"]="1"
+    ["VOPK_COMPLETION"]="1"
+    ["VOPK_HISTORY"]="1"
+    ["VOPK_AUTO_UPDATE"]="0"
+    ["VOPK_PROFILE"]="default"
+    ["VOPK_OPTIMIZE"]="1"
+    ["VOPK_BENCHMARK"]="0"
+    ["VOPK_VERBOSE"]="0"
+    ["VOPK_SHELL_INTEGRATION"]="1"
+)
+
+# Initialize configuration
+init_config() {
+    for key in "${!VOPK_CONFIG_DEFAULTS[@]}"; do
+        local value="${VOPK_CONFIG_DEFAULTS[$key]}"
+        if [[ -z "${!key:-}" ]]; then
+            export "$key"="$value"
+        fi
+    done
+}
+
+init_config
 
 VOPK_ARGS=()
 declare -A VOPK_METRICS=(
@@ -98,7 +114,7 @@ declare -A GAME_MGRS=()
 ###############################################################################
 
 # Theme: default
-THEME_DEFAULT=(
+declare -A THEME_DEFAULT=(
     ["primary"]="\033[38;5;39m"
     ["secondary"]="\033[38;5;45m"
     ["success"]="\033[38;5;46m"
@@ -112,7 +128,7 @@ THEME_DEFAULT=(
 )
 
 # Theme: dracula
-THEME_DRACULA=(
+declare -A THEME_DRACULA=(
     ["primary"]="\033[38;5;189m"
     ["secondary"]="\033[38;5;141m"
     ["success"]="\033[38;5;121m"
@@ -126,7 +142,7 @@ THEME_DRACULA=(
 )
 
 # Theme: nord
-THEME_NORD=(
+declare -A THEME_NORD=(
     ["primary"]="\033[38;5;109m"
     ["secondary"]="\033[38;5;103m"
     ["success"]="\033[38;5;114m"
@@ -140,7 +156,7 @@ THEME_NORD=(
 )
 
 # Theme: solarized
-THEME_SOLARIZED=(
+declare -A THEME_SOLARIZED=(
     ["primary"]="\033[38;5;33m"
     ["secondary"]="\033[38;5;37m"
     ["success"]="\033[38;5;64m"
@@ -154,7 +170,7 @@ THEME_SOLARIZED=(
 )
 
 # Theme: monokai
-THEME_MONOKAI=(
+declare -A THEME_MONOKAI=(
     ["primary"]="\033[38;5;81m"
     ["secondary"]="\033[38;5;197m"
     ["success"]="\033[38;5;148m"
@@ -167,23 +183,74 @@ THEME_MONOKAI=(
     ["accent3"]="\033[38;5;154m"
 )
 
-# Load theme
+# Theme variables
+PRIMARY=""
+SECONDARY=""
+SUCCESS=""
+WARNING=""
+ERROR=""
+INFO=""
+MUTED=""
+ACCENT1=""
+ACCENT2=""
+ACCENT3=""
+BOLD=""
+DIM=""
+ITALIC=""
+UNDERLINE=""
+BLINK=""
+INVERT=""
+HIDDEN=""
+RESET=""
+
+# Load theme with safety checks
 load_theme() {
     local theme_name="${VOPK_THEME:-default}"
-    local theme_var="THEME_${theme_name^^}[*]"
-    declare -n theme_ref="THEME_${theme_name^^}"
+    local theme_var_name="THEME_${theme_name^^}"
     
-    PRIMARY="${theme_ref[primary]:-\033[38;5;39m}"
-    SECONDARY="${theme_ref[secondary]:-\033[38;5;45m}"
-    SUCCESS="${theme_ref[success]:-\033[38;5;46m}"
-    WARNING="${theme_ref[warning]:-\033[38;5;226m}"
-    ERROR="${theme_ref[error]:-\033[38;5;196m}"
-    INFO="${theme_ref[info]:-\033[38;5;33m}"
-    MUTED="${theme_ref[muted]:-\033[38;5;242m}"
-    ACCENT1="${theme_ref[accent1]:-\033[38;5;129m}"
-    ACCENT2="${theme_ref[accent2]:-\033[38;5;208m}"
-    ACCENT3="${theme_ref[accent3]:-\033[38;5;46m}"
+    # Default color values
+    local default_primary="\033[38;5;39m"
+    local default_secondary="\033[38;5;45m"
+    local default_success="\033[38;5;46m"
+    local default_warning="\033[38;5;226m"
+    local default_error="\033[38;5;196m"
+    local default_info="\033[38;5;33m"
+    local default_muted="\033[38;5;242m"
+    local default_accent1="\033[38;5;129m"
+    local default_accent2="\033[38;5;208m"
+    local default_accent3="\033[38;5;46m"
     
+    # Check if theme exists
+    if declare -p "$theme_var_name" &>/dev/null; then
+        # Use indirect reference to access theme array
+        eval "declare -n theme_ref=\"$theme_var_name\""
+        
+        # Safely get values with defaults
+        PRIMARY="${theme_ref["primary"]:-$default_primary}"
+        SECONDARY="${theme_ref["secondary"]:-$default_secondary}"
+        SUCCESS="${theme_ref["success"]:-$default_success}"
+        WARNING="${theme_ref["warning"]:-$default_warning}"
+        ERROR="${theme_ref["error"]:-$default_error}"
+        INFO="${theme_ref["info"]:-$default_info}"
+        MUTED="${theme_ref["muted"]:-$default_muted}"
+        ACCENT1="${theme_ref["accent1"]:-$default_accent1}"
+        ACCENT2="${theme_ref["accent2"]:-$default_accent2}"
+        ACCENT3="${theme_ref["accent3"]:-$default_accent3}"
+    else
+        # Use default theme if specified theme doesn't exist
+        PRIMARY="$default_primary"
+        SECONDARY="$default_secondary"
+        SUCCESS="$default_success"
+        WARNING="$default_warning"
+        ERROR="$default_error"
+        INFO="$default_info"
+        MUTED="$default_muted"
+        ACCENT1="$default_accent1"
+        ACCENT2="$default_accent2"
+        ACCENT3="$default_accent3"
+    fi
+    
+    # Formatting codes
     BOLD="\033[1m"
     DIM="\033[2m"
     ITALIC="\033[3m"
@@ -194,8 +261,10 @@ load_theme() {
     RESET="\033[0m"
 }
 
+# Apply color mode
 apply_color_mode() {
     if [[ "$VOPK_NO_COLOR" -eq 1 || -n "${NO_COLOR-}" ]]; then
+        # Clear all color and formatting variables
         PRIMARY=""; SECONDARY=""; SUCCESS=""; WARNING=""; ERROR=""; INFO=""
         MUTED=""; ACCENT1=""; ACCENT2=""; ACCENT3=""
         BOLD=""; DIM=""; ITALIC=""; UNDERLINE=""; BLINK=""; INVERT=""; HIDDEN=""; RESET=""
@@ -400,7 +469,6 @@ ui_animate() {
 
 ui_banner() {
     apply_color_mode
-    clear
     
     # Animated banner
     if [[ "$VOPK_ANIMATIONS" -eq 1 ]]; then
@@ -909,7 +977,7 @@ _vopk() {
     local commands="update upgrade full-upgrade install remove purge autoremove search list show clean reinstall hold download changelog depends rdepends verify audit fix-dns fix-permissions fix-dependencies fix-broken export import backup restore snapshot rollback install-dev-kit install-build-deps sys-info doctor kernel disk mem top ps ip services logs monitor benchmark history flatpak snap appimage nix conda mamba npm yarn pnpm pip pipx poetry cargo go gem bundle composer dotnet mvn gradle docker podman self-update plugin"
     
     local flags="-y --yes -n --dry-run --no-color -d --debug -q --quiet --parallel --no-parallel --retry --cache-dir --config-dir --log-file --no-backup --no-rollback --ai --no-ai --security-scan --no-security --auto-clean --notify --no-notify --telemetry --no-telemetry --update-check --no-update-check --plugins --no-plugins -h --help -v --version --stats --doctor --completion --generate-config --list-backends --list-commands --changelog"
-    
+
     case "${prev}" in
         vopk)
             COMPREPLY=($(compgen -W "${commands} ${flags}" -- "${cur}"))
