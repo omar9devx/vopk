@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# VOPK Installer - Vopk Team
+# VOPK Installer - Omar9Dev
 # Installs vopk into /usr/local/bin/vopk and prepares dependencies per distro.
 # - Non-root installer (uses sudo where required)
 # - On Arch: temporary 'aurbuild' user to install yay, then cleanup
@@ -8,7 +8,7 @@
 
 set -eu
 
-VOPK_URL="https://raw.githubusercontent.com/vopkteam/vopk/main/bin/vopk"
+VOPK_URL="https://raw.githubusercontent.com/omar9devx/vopk/main/bin/vopk"
 VOPK_DEST="/usr/local/bin/vopk"
 
 PKG_MGR=""

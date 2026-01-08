@@ -3,9 +3,9 @@
 # vopk - Ultimate Package Manager (3.0.0 "Jammy")
 # The Complete Package Management Solution - Cross-platform, Universal, Intelligent
 #
-# Official: https://github.com/vopkteam/vopk
-# Documentation: https://vopkteam.github.io/vopk
-# Issues: https://github.com/vopkteam/vopk/issues
+# Official: https://github.com/omar9devx/vopk
+# Documentation: https://omar9devx.github.io/vopk
+# Issues: https://github.com/omar9devx/vopk/issues
 #
 # Supports: 50+ package managers across 20+ distributions and 6+ OS families
 #
@@ -18,9 +18,9 @@ VOPK_VERSION="3.0.0"
 VOPK_CODENAME="Jammy"
 VOPK_RELEASE_DATE="2024"
 VOPK_MIN_BASH_VERSION="4.4"
-VOPK_REPO_URL="https://github.com/vopkteam/vopk"
-VOPK_DOCS_URL="https://vopkteam.github.io/vopk"
-VOPK_ISSUES_URL="https://github.com/vopkteam/vopk/issues"
+VOPK_REPO_URL="https://github.com/omar9devx/vopk"
+VOPK_DOCS_URL="https://omar9devx.github.io/vopk"
+VOPK_ISSUES_URL="https://github.com/omar9devx/vopk/issues"
 
 ###############################################################################
 # ENHANCED CONFIGURATION SYSTEM WITH YAML/JSON SUPPORT
@@ -769,7 +769,7 @@ create_default_config() {
     if [[ ! -f "${VOPK_CONFIG_DIR}/config.yaml" ]]; then
         cat > "${VOPK_CONFIG_DIR}/config.yaml" <<'EOF'
 # vopk configuration - YAML format
-# Official: https://github.com/vopkteam/vopk
+# Official: https://github.com/omar9devx/vopk
 
 core:
   assume_yes: false

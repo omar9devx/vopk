@@ -28,12 +28,12 @@ if [[ -f "${VOPK_PLUGINS_DIR}/${EXAMPLE_PLUGIN_FILE}" ]]; then
             update_example_plugin
         else
             echo "❌ Plugin doesn't have update function"
-            echo "   Try reinstalling: curl -sSL https://raw.githubusercontent.com/vopkteam/vopk/main/plugins/install-example-plugin.sh | bash"
+            echo "   Try reinstalling: curl -sSL https://raw.githubusercontent.com/omar9devx/vopk/main/plugins/example-plugin.sh | bash"
         fi
     else
         echo "❌ Failed to load plugin"
     fi
 else
     echo "❌ Plugin not found. Installing..."
-    curl -sSL https://raw.githubusercontent.com/vopkteam/vopk/main/plugins/install-example-plugin.sh | bash
+    curl -sSL https://raw.githubusercontent.com/omar9devx/vopk/main/plugins/example-plugin.sh | bash
 fi

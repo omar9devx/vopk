@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-# VOPK Installer + Maintenance - Vopk Team
+# VOPK Installer + Maintenance - Omar9DevX
 # - Polite confirmation before doing anything (unless -y)
 # - On Arch: temporary 'aurbuild' user to install yay, then cleanup
 # - Colored output via printf
@@ -14,7 +14,7 @@
 
 set -eu
 
-VOPK_URL="https://raw.githubusercontent.com/vopkteam/vopk/main/bin/vopk"
+VOPK_URL="https://raw.githubusercontent.com/omar9devx/vopk/main/bin/vopk"
 VOPK_DEST="/usr/local/bin/vopk"
 VOPK_BAK="/usr/local/bin/vopk.bak"
 

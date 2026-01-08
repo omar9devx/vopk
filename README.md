@@ -4,12 +4,12 @@
 ### The Ultimate Package Manager Wrapper
 **One Command. Any Distro. Infinite Possibilities.**
 
-[![Version](https://img.shields.io/badge/version-3.0.0_Jammy-blueviolet?style=flat-square)](https://github.com/vopkteam/vopk/releases)
+[![Version](https://img.shields.io/badge/version-3.0.0_Jammy-blueviolet?style=flat-square)](https://github.com/omar9devx/vopk/releases)
 [![License](https://img.shields.io/badge/license-GPLv3-green?style=flat-square)](LICENSE)
 [![Bash](https://img.shields.io/badge/language-Bash-4EAA25?style=flat-square&logo=gnu-bash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-pink?style=flat-square)](CONTRIBUTING.md)
 
-[Installation](#-installation) • [Features](#-features) • [Documentation](https://vopkteam.github.io/vopk) • [Plugins](plugin/docs.md)
+[Installation](#-installation) • [Features](#-features) • [Documentation](https://omar9devx.github.io/vopk) • [Plugins](plugin/docs.md)
 
 </div>
 
@@ -85,12 +85,12 @@ Need more power? Drop a script into `~/.config/vopk/plugins`.
 Installs the latest stable version (3.0.0) to your system.
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/vopkteam/vopk/main/src/installscript.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/omar9devx/vopk/main/src/installscript.sh)
 ```
 
 ### Manual Installation
 ```bash
-git clone https://github.com/vopkteam/vopk.git ~/.vopkbuild
+git clone https://github.com/omar9devx/vopk.git ~/.vopkbuild
 cd ~/.vopkbuild/bin
 sudo install -m 775 vopk /usr/local/bin/vopk
 ```
