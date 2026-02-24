@@ -14,9 +14,9 @@
 set -euo pipefail
 shopt -s nullglob globstar nocaseglob
 
-VOPK_VERSION="3.0.0"
+VOPK_VERSION="3.1.0"
 VOPK_CODENAME="Jammy"
-VOPK_RELEASE_DATE="2024"
+VOPK_RELEASE_DATE="2025"
 VOPK_MIN_BASH_VERSION="4.4"
 VOPK_REPO_URL="https://github.com/omar9devx/vopk"
 VOPK_DOCS_URL="https://omar9devx.github.io/vopk"
@@ -26,8 +26,7 @@ VOPK_ISSUES_URL="https://github.com/omar9devx/vopk/issues"
 # ENHANCED CONFIGURATION SYSTEM WITH YAML/JSON SUPPORT
 ###############################################################################
 
-# Default configuration values
-VOPK_CONFIG_DEFAULTS=(
+declare -A VOPK_CONFIG_DEFAULTS=(
     ["VOPK_ASSUME_YES"]="0"
     ["VOPK_DRY_RUN"]="0"
     ["VOPK_NO_COLOR"]="0"
