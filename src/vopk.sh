@@ -16,7 +16,7 @@ shopt -s nullglob globstar nocaseglob
 
 VOPK_VERSION="3.1.0"
 VOPK_CODENAME="Jammy"
-VOPK_RELEASE_DATE="2025"
+VOPK_RELEASE_DATE="2026"
 VOPK_MIN_BASH_VERSION="4.4"
 VOPK_REPO_URL="https://github.com/omar9devx/vopk"
 VOPK_DOCS_URL="https://omar9devx.github.io/vopk"
