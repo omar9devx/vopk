@@ -62,9 +62,8 @@ declare -A VOPK_CONFIG_DEFAULTS=(
 # Initialize configuration
 init_config() {
     for key in "${!VOPK_CONFIG_DEFAULTS[@]}"; do
-        local value="${VOPK_CONFIG_DEFAULTS[$key]}"
-        if [[ -z "${!key:-}" ]]; then
-            export "$key"="$value"
+        if [[ ! -v $key ]]; then
+            export "$key"="${VOPK_CONFIG_DEFAULTS[$key]}"
         fi
     done
 }
