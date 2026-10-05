@@ -32,10 +32,10 @@ import argparse
 import subprocess
 import tempfile
 from pathlib import Path
-from typing import ByteString
+from typing import Union
 
 
-def xor_encrypt(data: ByteString, key: int) -> bytes:
+def xor_encrypt(data: Union[bytes, bytearray], key: int) -> bytes:
     """Apply a simple XOR to each byte (for light obfuscation only)."""
     return bytes(b ^ key for b in data)
 

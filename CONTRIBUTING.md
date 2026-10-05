@@ -30,7 +30,7 @@ This project adheres to a simple code of conduct: **Be respectful, be collaborat
 ## 🚀 How Can I Contribute?
 
 ### Reporting Bugs
-Bugs are tracked as [GitHub Issues](https://github.com/vopkteam/vopk/issues).
+Bugs are tracked as [GitHub Issues](https://github.com/omar9devx/vopk/issues).
 When filing an issue, please include:
 1.  **Your OS:** (e.g., Ubuntu 22.04, Arch Linux, macOS Sonoma).
 2.  **VOPK Version:** Run `vopk --version`.

@@ -18,7 +18,7 @@ VOPK_URL="https://raw.githubusercontent.com/omar9devx/vopk/main/bin/vopk"
 VOPK_DEST="/usr/local/bin/vopk"
 VOPK_BAK="/usr/local/bin/vopk.bak"
 
-VOPK_UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/vopkteam/vopk/main/src/updatescript.sh"
+VOPK_UPDATE_SCRIPT_URL="https://raw.githubusercontent.com/omar9devx/vopk/main/src/updatescript.sh"
 
 PKG_MGR=""
 PKG_FAMILY=""

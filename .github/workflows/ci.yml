@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Lint & Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck gcc
+
+      - name: Check Bash Syntax
+        run: |
+          bash -n src/vopk.sh
+          sh -n src/installscript.sh
+          sh -n src/updatescript.sh
+
+      - name: Run ShellCheck
+        run: |
+          shellcheck -e SC2034,SC2154,SC1090,SC1091 src/installscript.sh
+          shellcheck -e SC2034,SC2154,SC1090,SC1091 src/updatescript.sh
+
+      - name: Make Scripts Executable
+        run: chmod +x src/vopk.sh src/installscript.sh src/updatescript.sh bin/shell2bin.py tests/test_vopk.sh
+
+      - name: Run Automated Test Suite
+        run: ./tests/test_vopk.sh

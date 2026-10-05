@@ -4,7 +4,8 @@
 ### The Ultimate Package Manager Wrapper
 **One Command. Any Distro. Infinite Possibilities.**
 
-[![Version](https://img.shields.io/badge/version-3.0.0_Jammy-blueviolet?style=flat-square)](https://github.com/omar9devx/vopk/releases)
+[![Version](https://img.shields.io/badge/version-3.1.0_Jammy-blueviolet?style=flat-square)](https://github.com/omar9devx/vopk/releases)
+[![CI](https://github.com/omar9devx/vopk/actions/workflows/ci.yml/badge.svg)](https://github.com/omar9devx/vopk/actions)
 [![License](https://img.shields.io/badge/license-GPLv3-green?style=flat-square)](LICENSE)
 [![Bash](https://img.shields.io/badge/language-Bash-4EAA25?style=flat-square&logo=gnu-bash&logoColor=white)](https://www.gnu.org/software/bash/)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-pink?style=flat-square)](CONTRIBUTING.md)
